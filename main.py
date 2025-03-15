@@ -1,6 +1,7 @@
 import streamlit as st
 import speech_recognition as sr
 from pydub import AudioSegment
+import os
 
 # Page Config
 st.set_page_config(page_title="Growth Mindset", page_icon="🚀", layout="wide")
@@ -45,9 +46,14 @@ if audio_file:
 
     # Convert MP3/M4A to WAV (if needed)
     if audio_format in ["mp3", "m4a"]:
-        audio = AudioSegment.from_file(audio_path, format=audio_format)
-        audio.export("converted_audio.wav", format="wav")
-        audio_path = "converted_audio.wav"
+        try:
+            audio = AudioSegment.from_file(audio_path, format=audio_format)
+            audio.export("converted_audio.wav", format="wav")
+            audio_path = "converted_audio.wav"
+        except Exception as e:
+            st.error(f"Error in audio conversion: {e}")
+            os.remove(audio_path)
+            st.stop()
 
     if st.button("🔊 Convert Audio"):
         recognizer = sr.Recognizer()
@@ -62,5 +68,10 @@ if audio_file:
             st.error("❌ Could not understand the audio.")
         except sr.RequestError:
             st.error("⚠️ Error processing speech recognition.")
+
+    # Clean up temporary files
+    os.remove(audio_path)
+    if audio_format in ["mp3", "m4a"]:
+        os.remove("converted_audio.wav")
 else:
     st.warning("🔊 Please upload an audio file first.")
